@@ -92,8 +92,7 @@ class Shape:
         return 180.0 - 45.0 * TURN_SIGNED[self.turns[i]]
 
     def world_vertices(self, theta_deg: float, tx: float, ty: float):
-        c, s = math.cos(math.radians(theta_deg)), math.sin(
-            math.radians(theta_deg))
+        c, s = math.cos(math.radians(theta_deg)), math.sin(math.radians(theta_deg))
         return [(tx + c * x - s * y, ty + s * x + c * y) for x, y in self.vertices]
 
     def construction(
@@ -145,8 +144,7 @@ def l_shape(a1: int, a2: int, b1: int, b2: int) -> Shape:
     """An L: bottom a1+a2 wide, right arm b1 high, upper-left arm b1+b2 high and
     a1 wide (the notch is a2 x b2)."""
     return Shape(
-        "L", (a1, a2, b1, b2), [0, 2, 4, 2, 4, 6], [
-            a1 + a2, b1, a2, b2, a1, b1 + b2]
+        "L", (a1, a2, b1, b2), [0, 2, 4, 2, 4, 6], [a1 + a2, b1, a2, b2, a1, b1 + b2]
     )
 
 
@@ -279,8 +277,9 @@ class Allocator:
         ok = self._relax.get(rkey) if len(sides) <= self._relax_limit else True
         if ok is None:
             ok = (
-                self._fill(list(sides), dict(self.pool),
-                           self.straight, [0] * len(sides))
+                self._fill(
+                    list(sides), dict(self.pool), self.straight, [0] * len(sides)
+                )
                 is not None
             )
             self._relax[rkey] = ok
@@ -390,8 +389,7 @@ class Allocator:
         min_need = [0] * (n + 1)
         for k in range(n - 1, -1, -1):
             i = order[k]
-            need = 0 if lengths[i] == 0 else self.min_parts(
-                lengths[i]) - 1 + extra[i]
+            need = 0 if lengths[i] == 0 else self.min_parts(lengths[i]) - 1 + extra[i]
             min_need[k] = min_need[k + 1] + need
         choice: list[tuple[int, ...] | None] = [None] * n
         nodes = [0]
@@ -438,6 +436,7 @@ class Allocator:
             return None
         return [list(c) for c in choice]
 
+
 # ============================================================================
 # Placement
 # Finding where in the room a shape fits.
@@ -480,14 +479,12 @@ class Placer:
         self.pts = pts
         n = len(pts)
         self.edges = [(pts[i], pts[(i + 1) % n]) for i in range(n)]
-        self.out_angle = [_angle(b[0] - a[0], b[1] - a[1])
-                          for a, b in self.edges]
+        self.out_angle = [_angle(b[0] - a[0], b[1] - a[1]) for a, b in self.edges]
         self.in_angle = [self.out_angle[i - 1] for i in range(n)]
         self.interior = [
             180.0 - _norm(self.out_angle[i] - self.in_angle[i]) for i in range(n)
         ]
-        self.edge_len = [math.hypot(b[0] - a[0], b[1] - a[1])
-                         for a, b in self.edges]
+        self.edge_len = [math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in self.edges]
         self.bounds = room.polygon.bounds
         buffered = room.polygon.buffer(TOL)
         self._checker = prep(buffered) if prep is not None else buffered
@@ -595,8 +592,7 @@ class Placer:
                 (self.out_angle[j] - shape_out[i], self.out_angle[j]),
                 (self.in_angle[j] - shape_in[i], self.in_angle[j] + 180.0),
             ):
-                c, s = math.cos(math.radians(theta)), math.sin(
-                    math.radians(theta))
+                c, s = math.cos(math.radians(theta)), math.sin(math.radians(theta))
                 vx, vy = shape.vertices[i]
                 tx, ty = rx - (c * vx - s * vy), ry - (s * vx + c * vy)
                 yield theta, tx, ty
@@ -647,8 +643,7 @@ class Placer:
                     points.append((x, y))
         for px, py in points:
             for theta in angles:
-                c, s = math.cos(math.radians(theta)), math.sin(
-                    math.radians(theta))
+                c, s = math.cos(math.radians(theta)), math.sin(math.radians(theta))
                 yield theta, px - (c * cx - s * cy), py - (s * cx + c * cy)
 
     def place(self, shape, max_checks: int = 4000):
@@ -667,6 +662,7 @@ class Placer:
             if self.fits(shape.world_vertices(theta, tx, ty)):
                 return theta, tx, ty
         return None
+
 
 # ============================================================================
 # Refinement
@@ -706,12 +702,10 @@ class Refiner:
             return
         self.rng, self.top_k = rng, top_k
         # work in the shape's own frame (rotated by -theta), origin at (0, 0) world
-        verts = [_rot(x, y, -theta)
-                 for x, y in shape.world_vertices(theta, tx, ty)]
+        verts = [_rot(x, y, -theta) for x, y in shape.world_vertices(theta, tx, ty)]
         room = [_rot(x, y, -theta) for x, y in self.placer.pts]
         self._room = room
-        room_edges = [(room[i], room[(i + 1) % len(room)])
-                      for i in range(len(room))]
+        room_edges = [(room[i], room[(i + 1) % len(room)]) for i in range(len(room))]
         for _ in range(max_moves):
             if self.out_of_time():
                 return
@@ -729,8 +723,7 @@ class Refiner:
         A, C = self.weights.A, self.weights.C
         cands = []
         best = None
-        greedy = getattr(self, "rng", None) is None or getattr(
-            self, "top_k", 1) <= 1
+        greedy = getattr(self, "rng", None) is None or getattr(self, "top_k", 1) <= 1
         for i in range(n):
             if i % 16 == 0 and self.out_of_time():
                 return None
@@ -829,8 +822,7 @@ class Refiner:
         interval), or None if it has no such part."""
         e = 1e-9
         if abs(bu - au) < 1e-12:
-            inside = (lo - e <= au <= hi +
-                      e) if closed else (lo + e < au < hi - e)
+            inside = (lo - e <= au <= hi + e) if closed else (lo + e < au < hi - e)
             if not inside:
                 return None
             return min(av, bv), max(av, bv)
@@ -895,7 +887,7 @@ class Refiner:
         new += [b, c]
         if post > 0:
             new.append(d)
-        new += verts[i + 1:]
+        new += verts[i + 1 :]
         # drop vertices that became straight (collinear with both neighbours)
         out = []
         m = len(new)
@@ -1248,8 +1240,7 @@ class GridEngine:
         for t in range(1, top + 1):
             for g in gaps:
                 if t - g >= 0 and dp[t - g] >= 0:
-                    val = dp[t - g] + \
-                        (value(t - g, t) if t - g < span else 0.0)
+                    val = dp[t - g] + (value(t - g, t) if t - g < span else 0.0)
                     if val > dp[t] + 1e-9:
                         dp[t] = val
                         back[t] = t - g
@@ -1443,8 +1434,7 @@ class GridEngine:
                 continue
             if not region.can_add(c):
                 if tries < 3:
-                    heapq.heappush(
-                        heap, (pri(c) + 10.0 * (tries + 1), tries + 1, c))
+                    heapq.heappush(heap, (pri(c) + 10.0 * (tries + 1), tries + 1, c))
                 continue
             before = self._corner_count(region, c)
             i, j = c
@@ -1455,8 +1445,7 @@ class GridEngine:
                 ((0, 1), w),
                 ((0, -1), w),
             ):
-                perim += -length if (i + dx, j +
-                                     dy) in region.cells else length
+                perim += -length if (i + dx, j + dy) in region.cells else length
             region.add(c)
             corners += self._corner_count(region, c) - before
             area += w * h
@@ -1545,8 +1534,7 @@ class GridEngine:
                 continue
             comps = self._components(rest)
             keep = max(
-                comps, key=lambda comp: sum(
-                    grid.w[x] * grid.h[y] for x, y in comp)
+                comps, key=lambda comp: sum(grid.w[x] * grid.h[y] for x, y in comp)
             )
             lost = sum(grid.w[x] * grid.h[y] for x, y in region.cells - keep)
             trial = Region(region.inside)
@@ -1700,6 +1688,7 @@ class GridEngine:
                     return None
         return None
 
+
 # ============================================================================
 # Player
 # ============================================================================
@@ -1797,7 +1786,7 @@ class Player8(Player):
         if all(d % 2 == 0 for d in shape.dirs):
             self.seeds.append((score, shape, theta, tx, ty))
             self.seeds.sort(key=lambda t: -t[0])
-            del self.seeds[N_SEEDS * 3:]
+            del self.seeds[N_SEEDS * 3 :]
         if score > self.best_score:
             self.best_score = score
             self.best = construction
@@ -1839,8 +1828,7 @@ class Player8(Player):
         if right >= 4:
             for i, a in enumerate(L):
                 for b in L[i:]:
-                    add("rect", (a, b), a * b, 2 *
-                        (a + b), math.hypot(a, b), a / 2)
+                    add("rect", (a, b), a * b, 2 * (a + b), math.hypot(a, b), a / 2)
         if diag >= 8:
             for a in L:
                 for b in L:
@@ -1897,8 +1885,7 @@ class Player8(Player):
                                 u_r = max(min(W, b1), min(max(a1, a3), H)) / 2
                                 t_r = max(min(W, b1), min(a2, H)) / 2
                                 add("U", p, u_area, 2 * (W + H) + 2 * b2, d, u_r)
-                                add("T", p, W * b1 + a2 *
-                                    b2, 2 * (W + H), d, t_r)
+                                add("T", p, W * b1 + a2 * b2, 2 * (W + H), d, t_r)
         out.sort(key=lambda t: -t[0])
         return out
 
@@ -1990,8 +1977,7 @@ class Player8(Player):
             desc = f"grid outline ({len(shape.lengths)} sides)"
             if n_g == 2:
                 desc += " with 2 gates"
-            score, ok, reason = self._commit(
-                shape, pieces, theta, tx, ty, desc)
+            score, ok, reason = self._commit(shape, pieces, theta, tx, ty, desc)
             if ok:
                 return score, ok, reason
         return 0.0, False, reason
@@ -2061,8 +2047,7 @@ class Player8(Player):
         refiner = Refiner(
             self.placer, L, self.weights, self.conn["right"], self._out_of_time
         )
-        angles = sorted({round(a % 90.0, 4)
-                        for a in self.placer.out_angle}) or [0.0]
+        angles = sorted({round(a % 90.0, 4) for a in self.placer.out_angle}) or [0.0]
         minx, miny, maxx, maxy = self.placer.bounds
         small = L[:4]
         misses = 0
@@ -2078,16 +2063,14 @@ class Player8(Player):
                 if not self.placer._point_ok(px, py):
                     continue
                 theta = rng.choice(angles) + 90.0 * rng.randrange(4)
-                c, s_ = math.cos(math.radians(theta)), math.sin(
-                    math.radians(theta))
+                c, s_ = math.cos(math.radians(theta)), math.sin(math.radians(theta))
                 cx, cy = a / 2, b / 2
                 tx, ty = px - (c * cx - s_ * cy), py - (s_ * cx + c * cy)
                 if self.placer.fits(shape.world_vertices(theta, tx, ty)):
                     start = (shape, theta, tx, ty)
                     break
             if start is None:
-                pool = [x for x in self.seeds if x[1].family !=
-                        "rect" or x[0] > 0]
+                pool = [x for x in self.seeds if x[1].family != "rect" or x[0] > 0]
                 if not pool:
                     misses += 1
                     if misses > 200:
